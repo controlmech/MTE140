@@ -1,6 +1,6 @@
 #include <iostream>
 #include "lab2_drones_manager.hpp"
-
+// Comment
 // TODO: Implement all of the listed functions below
 
 DronesManager::DronesManager() {
