@@ -1,6 +1,6 @@
 #include <iostream>
 #include "lab3_binary_search_tree.hpp"
-
+//hi
 using namespace std;
 
 // PURPOSE: Default/empty constructor
@@ -37,7 +37,7 @@ unsigned int BinarySearchTree::height() const {
 void BinarySearchTree::print() const {
 }
 
-// PURPOSE: Returns true if a node with the value val exists in the tree	
+// PURPOSE: Returns true if a node with the value val exists in the tree
 // otherwise, returns false
 bool BinarySearchTree::exists( BinarySearchTree::TaskItem val ) const {
 	return false;
