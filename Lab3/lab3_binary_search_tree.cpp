@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stack>
 #include <queue>
 #include "lab3_binary_search_tree.hpp"
 
@@ -10,18 +11,27 @@ BinarySearchTree::BinarySearchTree() {
 	size = 0;
 }
 
-void BinarySearchTree::clean_up(BinarySearchTree::TaskItem* n ) {
-    if (n == NULL) return;
-    clean_up(n->left);
-    clean_up(n->right);
-    delete n;
-}
-
 // PURPOSE: Explicit destructor of the class BinarySearchTree
 BinarySearchTree::~BinarySearchTree() {
-	clean_up(root);
-	root = NULL;
-	size = 0;
+	if (!root)
+		return;
+	stack<BinarySearchTree::TaskItem*> s1;
+	TaskItem* cur;
+	s1.push(root);
+
+	while (!root){
+		cur = s1.top();
+		s1.pop();
+		if (cur->left) {
+			s1.push(cur->left);
+		}
+		if (cur->right) {
+			s1.push(cur->right);
+		}
+		delete cur;
+		--size;
+	}
+	cur = NULL;
 }
 
 // PURPOSE: Returns the number of nodes in the tree
@@ -57,10 +67,9 @@ BinarySearchTree::TaskItem BinarySearchTree::min() const {
 
 // PURPOSE: Returns the tree height
 unsigned int BinarySearchTree::height() const {
-    if (!root)
-        return 0;
-
-    int height = 0;
+	if (!root)
+        return -1;
+    int height = -1;
     queue<TaskItem*> q;
     q.push(root);
     while (true)
@@ -84,146 +93,239 @@ unsigned int BinarySearchTree::height() const {
     }
 }
 
-// PURPOSE: Helper function for print
-void BinarySearchTree::print(BinarySearchTree::TaskItem* T) const {
-	if (T == NULL) return;
-	print(T->left);
-	cout << T->priority << " ";
-	print(T->right);
-} // NEW
-
 // PURPOSE: Prints the contents of the tree; format not specified
 void BinarySearchTree::print() const {
-	print(root);
-	cout << endl;
+	int i = 0;
+	print(root, i);
+}
+
+void BinarySearchTree::print(BinarySearchTree::TaskItem* T, int& i) const {
+	if(T == NULL)
+		return;
+	else {
+		print(T->left, i);
+		i++;
+		cout << i << " - " << T->priority << endl;
+		print(T->right, i);
+	}
 }
 
 // PURPOSE: Returns true if a node with the value val exists in the tree
 // otherwise, returns false
 bool BinarySearchTree::exists( BinarySearchTree::TaskItem val ) const {
-    TaskItem* cur = root;
+	if (!root)
+		return false;
+	stack<BinarySearchTree::TaskItem*> s1;
+	s1.push(root);
+	TaskItem* cur;
+    bool found = false;
 
-    while(cur){
-        if(*cur == val)
-            return true;
-        if(cur->priority < val.priority)
-            cur = cur->left;
-        else
-            cur = cur->right;
-    }
-    return false;
+	while (s1.size() && !found){
+		cur = s1.top();
+		if (*cur == val)
+			found = true;
+		s1.pop();
+		if (cur->left)
+			s1.push(cur->left);
+		if (cur->right)
+			s1.push(cur->right);
+	}
+	return found;
 }
 
 // PURPOSE: Optional helper function that returns a pointer to the root node
 BinarySearchTree::TaskItem* BinarySearchTree::get_root_node() {
-    return root;
+    return NULL;
 }
 
 // PURPOSE: Optional helper function that returns the root node pointer address
 BinarySearchTree::TaskItem** BinarySearchTree::get_root_node_address() {
-    return &root;
+    return NULL;
 }
 
 // PURPOSE: Optional helper function that gets the maximum depth for a given node
 int BinarySearchTree::get_node_depth( BinarySearchTree::TaskItem* n ) const {
-	if(exists(*n))
-		return -1;
-
-	TaskItem* cur = root;
-	int count = 0;
-
-	while(cur){
-		if(cur == n)
-			cur = NULL;
-		if(cur->priority < n->priority)
-			cur = cur->left;
-		else
-			cur = cur->right;
-		count++;
-	}
-	return count;
+	return 0;
 }
 
 // PURPOSE: Inserts the value val into the tree if it is unique
 // returns true if successful; returns false if val already exists
 bool BinarySearchTree::insert( BinarySearchTree::TaskItem val ) {
-    TaskItem** cur = &root;
-    while(*cur){
-        if (val.priority == (*cur)->priority)
-            return false;
-        if (val.priority > (*cur)->priority)
-            cur = &((*cur)->right);
-        else
-            cur = &((*cur)->left);
-    }
-    *cur = new TaskItem(val);
-    size++;
+	if (!root){
+		root = new TaskItem(val);
+		size++;
+		return true;
+	}
+	else if (exists(val))
+		return false;
+
+	TaskItem* cur = root;
+	TaskItem* prev = cur;
+
+	while (cur) {
+		if (cur->priority > val.priority) {
+			prev = cur;
+			cur = cur->left;
+		}
+		else {
+			prev = cur;
+			cur = cur->right;
+		}
+	}
+	if (prev->priority > val.priority)
+		prev->left = new TaskItem(val);
+	else
+		prev->right = new TaskItem(val);
+	size++;
     return true;
 }
 
 // PURPOSE: Removes the node with the value val from the tree
 // returns true if successful; returns false otherwise
-bool BinarySearchTree::remove( BinarySearchTree::TaskItem val ) {
-    if (!root)
-        return false;
-    TaskItem** cur = &root;
-    TaskItem** parent;
-    bool right;
-    while(val.priority != (*cur)->priority){
-        if (val.priority > (*cur)->priority){
-            if ((*cur)->right){
-                parent = cur;
-                cur = &((*cur)->right);
-                right = true;
-            }
-            else
-                return false;
-        }
-        else if (val.priority < (*cur)->priority){
-            if ((*cur)->left){
-                parent = cur;
-                cur = &((*cur)->left);
-                right = false;
-            }
-            else
-                return false;
-        }
-    }
-    cout << "right: " << right << endl;
-    cout << (*cur)->priority << " " << (*parent)->priority << endl;
-    if (!((*cur)->left) && !((*cur)->right)){
-        delete *cur;
-        *cur = NULL;
-    }
-    else if ((*cur)->left && !((*cur)->right)){
-        if (right)
-            (*parent)->right = (*cur)->left;
-        else
-            (*parent)->left = (*cur)->left;
-    }
-    else if (!((*cur)->left) && (*cur)->right){
-        if (right)
-            (*parent)->right = (*cur)->right;
-        else
-            (*parent)->left = (*cur)->right;
-    }
-    else{
-        TaskItem** temp = &((*cur)->right);
-        TaskItem** temp_parent;
-        while((*temp)->left){
-            temp_parent = temp;
-            temp = &((*temp)->left);
-        }
-        if (right)
-            (*parent)->right = *temp;
-        else
-            (*parent)->left = *temp;
-        (*temp)->left = (*cur)->left;
-        (*temp)->right = (*cur)->right;
-        (*temp_parent)->left = nullptr;
-        delete *cur;
-        *cur = NULL;
-    }
-    size--;
+bool BinarySearchTree::remove(BinarySearchTree::TaskItem val) {
+	TaskItem* cur = root;
+	TaskItem* prev_cur = NULL;
+	if(!root)
+		return false;
+	else if(size == 1 && val == *root) {
+		delete root;
+		root = NULL;
+		cur = NULL;
+	}
+	else if(!exists(val)) {
+		cur = NULL;
+		return false;
+	}
+	else {
+		while((cur->right != NULL || cur->left != NULL) && !(*cur == val)) {
+			if(val.priority > cur->priority) {
+				prev_cur = cur;
+				cur = cur->right;
+			}
+			else {
+				prev_cur = cur;
+				cur = cur->left;
+			}
+		}
+		if(cur->right == NULL && cur->left == NULL) { //case 1
+			delete cur;
+			if(prev_cur->left == cur) //if cur is to the left of prev_cur
+				prev_cur->left = cur->left;
+			else //if cur is to the right of prev_cur
+				prev_cur->right = cur->left;
+			cur = NULL;
+			prev_cur = NULL;
+		}
+		else if(cur->right == NULL) { //case 2
+			if(prev_cur) { //if cur is not root
+				if(prev_cur->left == cur) //if cur is to the left of prev_cur
+					prev_cur->left = cur->left;
+				else //if cur is to the right of prev_cur
+					prev_cur->right = cur->left;
+				delete cur;
+				cur = NULL;
+				prev_cur = NULL;
+			}
+			else { //if cur is root
+				root = cur->left;
+				delete cur;
+				cur = NULL;
+			}
+		}
+		else if(cur->left == NULL) { //case 2
+			if(prev_cur) { //if cur is not root
+				if(prev_cur->left == cur) //if cur is to the left of prev_cur
+					prev_cur->left = cur->right;
+				else //if cur is to the right of prev_cur
+					prev_cur->right = cur->right;
+				delete cur;
+				cur = NULL;
+				prev_cur = NULL;
+			}
+			else { //if cur is root
+				root = cur->right;
+				delete cur;
+				cur = NULL;
+			}
+		}
+		else { //case 3
+			TaskItem* prev_pred = NULL;
+			TaskItem* pred = cur->left;
+			while(pred->right != NULL) {
+				prev_pred = pred;
+				pred = pred->right;
+			}
+			if(prev_cur) { //if cur is not root
+				if(prev_cur->left == cur) { //if cur is to the left of prev_cur
+					if(prev_pred) { //if predecessor is not cur->left
+						prev_cur->left = pred;
+						prev_pred->right = pred->left;
+						pred->left = cur->left;
+						pred->right = cur->right;
+						delete cur;
+						cur = NULL;
+						prev_cur = NULL;
+						pred = NULL;
+						prev_pred = NULL;
+					}
+					else { //if predecessor is cur->left
+						prev_cur->left = pred;
+						pred->right = cur->right;
+						delete cur;
+						cur = NULL;
+						prev_cur = NULL;
+						pred = NULL;
+						prev_pred = NULL;
+					}
+				}
+				else { //if cur is to the right of prev_cur
+					if(prev_pred) { //if predecessor is not cur->left
+						prev_cur->right = pred;
+						prev_pred->right = pred->left;
+						pred->left = cur->left;
+						pred->right = cur->right;
+						delete cur;
+						cur = NULL;
+						prev_cur = NULL;
+						pred = NULL;
+						prev_pred = NULL;
+					}
+					else { //if predecessor is cur->left
+						prev_cur->right = pred;
+						pred->right = cur->right;
+						delete cur;
+						cur = NULL;
+						prev_cur = NULL;
+						pred = NULL;
+						prev_pred = NULL;
+					}
+				}
+
+			}
+			else { //if cur is root
+				if(prev_pred) { //if predecessor is not cur->left
+					root = pred;
+					prev_pred->right = pred->left;
+					pred->left = cur->left;
+					pred->right = cur->right;
+					delete cur;
+					cur = NULL;
+					prev_cur = NULL;
+					pred = NULL;
+					prev_pred = NULL;
+				}
+				else { //if predecessor is cur->left
+					root = pred;
+					pred->right = cur->right;
+					delete cur;
+					cur = NULL;
+					prev_cur = NULL;
+					pred = NULL;
+					prev_pred = NULL;
+				}
+			}
+		}
+	}
+	size--;
     return true;
 }

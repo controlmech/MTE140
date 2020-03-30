@@ -57,11 +57,11 @@ public:
 	// PURPOSE: Returns the tree height
 	unsigned int height() const;
 
-	//PURPOSE: Helper function for print
-	void print(TaskItem* T) const; // NEW
-
 	// PURPOSE: Prints the contents of the tree; format not specified
 	void print() const;
+
+    //PURPOSE: Helper function for print
+    void print(BinarySearchTree::TaskItem* T, int& i) const;
 
 	// PURPOSE: Returns true if a node with the value val exists in the tree
 	// otherwise, returns false
